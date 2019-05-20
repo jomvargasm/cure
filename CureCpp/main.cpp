@@ -1,11 +1,13 @@
 #include <iostream>
 #include "cure/curetest.h"
+#include "cureAlgorithm/curemanager.h"
 
 using namespace std;
 
 int main()
 {
     cout << "Hello World!" << endl;
-    testShuffleDataCure();
+    CureManager cure("../CureCpp/data_set_cluster.csv", 15, 20, 0.8);
+    cure.saveResult("guardar.csv");
     return 0;
 }

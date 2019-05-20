@@ -1,19 +1,18 @@
-#include "curecluster.h"
+#include "cureclusterdata.h"
 
 using std::cout;
 
-CureCluster::CureCluster(int clusters, int partitions, string fileName, string delimiter) :
+CureClusterData::CureClusterData(int partitions, string fileName, string delimiter) :
     fileName(fileName),
-    reader(fileName, delimiter),
-    sampleRate(0.15)
+    sampleRate(0.75),
+    reader(fileName, delimiter)
 {
-    this->clusters = std::max(2, clusters);
     this->partitions = std::max(2, partitions);
     arma::arma_rng::set_seed_random();
 }
 
 
-bool CureCluster::shuffleAndPartitionData()
+bool CureClusterData::shuffleAndPartitionData()
 {
     unsigned long sample_length = static_cast<unsigned long>(std::max(this->sampleRate * this->reader.rowsCount, 2.0));
     arma::uvec shuffled_rows = arma::shuffle(arma::linspace<arma::uvec>(0, static_cast<unsigned long>(this->reader.rowsCount - 1), static_cast<unsigned long>(this->reader.rowsCount)));
@@ -32,7 +31,7 @@ bool CureCluster::shuffleAndPartitionData()
     return true;
 }
 
-void CureCluster::clusterData()
+void CureClusterData::clusterData()
 {
     this->reader.readData();
     if (!shuffleAndPartitionData())

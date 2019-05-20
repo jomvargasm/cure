@@ -11,20 +11,19 @@ using arma::Mat;
 using std::string;
 using std::vector;
 
-class CureCluster
+class CureClusterData
 {
 private:
     string fileName;
-    CSVDataReader reader;
-    int clusters;
     int partitions;
     double sampleRate;
     bool shuffleAndPartitionData();
 
 public:
-    CureCluster(int clusters, int partitions, string fileName, string delimiter = ",");
+    CureClusterData(int partitions, string fileName, string delimiter = ",");
     void clusterData();
     vector<Mat<double>> dataPartitions;
+    CSVDataReader reader;
 
 };
 

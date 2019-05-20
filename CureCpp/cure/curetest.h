@@ -3,7 +3,7 @@
 
 #include <armadillo>
 #include <iostream>
-#include "curecluster.h"
+#include "cureclusterdata.h"
 
 using std::cout;
 

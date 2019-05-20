@@ -21,9 +21,7 @@ class CSVDataReader
 {
 private:
     string fileName;
-    string delimiter;
     ifstream file;
-    vector<string> headers;
     vector<map<string, int>> mappersEncoder;
     vector<vector<string>> mappersDecoder;
     vector<DATA_TYPE> types;
@@ -37,6 +35,8 @@ public:
     vector<DATA_TYPE> getDataTypes();
     void readData();
     // variables
+    vector<string> headers;
+    string delimiter;
     long fieldsCount;
     long rowsCount;
     Mat<double> data;

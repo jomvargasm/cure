@@ -2,7 +2,7 @@
 
 void testShuffleDataCure()
 {
-    CureCluster cluster(5, 3, "../CureCpp/files/data_test.csv");
+    CureClusterData cluster(3, "../CureCpp/files/data_test.csv");
     cluster.clusterData();
     for (Mat<double> data : cluster.dataPartitions)
     {
