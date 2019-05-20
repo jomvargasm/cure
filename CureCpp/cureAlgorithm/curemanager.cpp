@@ -4,7 +4,7 @@ CureManager::CureManager(string fileName, int numberClusters, int numberPartitio
     clusterData(numberPartitions, fileName)
 {
     this->numClusters = std::max(2, numberClusters);
-    if (0 < shiftFactor && shiftFactor < 1)
+    if (0.0 < shiftFactor && shiftFactor < 1.0)
     {
         CureClusterModel::shiftFactor = shiftFactor;
     }

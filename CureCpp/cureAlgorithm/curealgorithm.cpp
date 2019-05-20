@@ -27,6 +27,9 @@ void CureAlgorithm::clusterData()
 {
     long count = 0;
     long max_count = static_cast<long>(10 * this->mapData.size());
+    vector<double> meanDistancesVector;
+    unsigned long numberComparedDistances = 4;
+    double maxDistanceStepAllowedFactor = 5.0;
     while (this->mapData.size() > this->numberClusters && count < (max_count))
     {
         unsigned long long index = 0;
@@ -45,6 +48,15 @@ void CureAlgorithm::clusterData()
             this->mapData.at(index)->calculateClusterDistances(this->mapData);
             continue;
         }
+        if (meanDistancesVector.size() >= numberComparedDistances)
+        {
+            double meanDistancesValue = std::accumulate(meanDistancesVector.begin(), meanDistancesVector.end(), 0.0) / static_cast<double>(meanDistancesVector.size());
+            if (minDistance > (maxDistanceStepAllowedFactor * meanDistancesValue))
+            {
+                break;
+            }
+        }
+        meanDistancesVector.push_back(minDistance);
         CureClusterModel * newCluster = CureClusterModel::mergeClusters(this->mapData.at(index), this->mapData.at(indexNearest));
         for (ClusterDistance_t nearCluster : this->mapData.at(index)->nearestClusters)
         {
@@ -54,15 +66,36 @@ void CureAlgorithm::clusterData()
         {
             nearCluster.cluster->reCalculateClusterDistances(indexNearest, newCluster);
         }
-        if (this->mapData.count(indexNearest))
-        {
-            this->mapData.erase(indexNearest);
-        }
-        if (this->mapData.count(index))
-        {
-            this->mapData.erase(index);
-        }
+        deleteIndexPointerFromMapData(indexNearest);
+        deleteIndexPointerFromMapData(index);
         this->mapData.insert(std::pair<unsigned long long, CureClusterModel *>(newCluster->id, newCluster));
         count++;
+    }
+    if (this->mapData.size() > this->numberClusters)
+    {
+        vector<vector<unsigned long long>> indexPointSizes;
+        for (std::pair<unsigned long long, CureClusterModel *> clustPair : this->mapData)
+        {
+            vector<unsigned long long> m_size({clustPair.first, clustPair.second->points.size()});
+            indexPointSizes.push_back(m_size);
+        }
+        std::sort(indexPointSizes.begin(), indexPointSizes.end(),
+                  [](const std::vector<unsigned long long>& a, const std::vector<unsigned long long>& b) {
+                    return a[2] > b[2];
+                  });
+        for (unsigned long i = this->numberClusters; i < indexPointSizes.size(); i++)
+        {
+            deleteIndexPointerFromMapData(indexPointSizes.at(i).at(0));
+        }
+    }
+}
+
+void CureAlgorithm::deleteIndexPointerFromMapData(unsigned long long index)
+{
+    if (this->mapData.count(index))
+    {
+        delete this->mapData.at(index);
+        this->mapData.at(index) = nullptr;
+        this->mapData.erase(index);
     }
 }

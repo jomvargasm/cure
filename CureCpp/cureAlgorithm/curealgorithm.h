@@ -6,7 +6,9 @@
 #include <armadillo>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include "cureclustermodel.h"
+
 
 using std::numeric_limits;
 using std::vector;
@@ -19,7 +21,7 @@ class CureAlgorithm
 {
 private:
     //PRIVATE FUNCTIONS
-
+    void deleteIndexPointerFromMapData(unsigned long long index);
     //PRIVATE VARIABLES
     unsigned long numberClusters;
 
