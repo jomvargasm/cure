@@ -4,7 +4,7 @@ using std::cout;
 
 CureClusterData::CureClusterData(int partitions, string fileName, string delimiter) :
     fileName(fileName),
-    sampleRate(0.15),
+    sampleRate(0.5),
     reader(fileName, delimiter)
 {
     this->partitions = std::max(2, partitions);

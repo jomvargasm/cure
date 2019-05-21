@@ -22,6 +22,7 @@ void CureManager::cluster()
         cureAlg.clusterData();
         clusterPartition.push_back(cureAlg);
     }
+    cout << "Terminan clusters de particiones \n";
     map<unsigned long long, CureClusterModel *> data (clusterPartition.at(0).mapData);
     for (unsigned long i = 1; i < clusterPartition.size(); i++)
     {
@@ -33,6 +34,7 @@ void CureManager::cluster()
     CureAlgorithm cureAlgor(data, static_cast<unsigned long>(this->numClusters));
     cureAlgor.clusterData();
     this->clustersMap = cureAlgor.mapData;
+    cout << "Terminan clusters total \n";
 }
 
 void CureManager::saveResult(string fileName)

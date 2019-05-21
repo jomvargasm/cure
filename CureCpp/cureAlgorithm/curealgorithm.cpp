@@ -28,8 +28,8 @@ void CureAlgorithm::clusterData()
     long count = 0;
     long max_count = static_cast<long>(10 * this->mapData.size());
     vector<double> meanDistancesVector;
-    unsigned long numberComparedDistances = 4;
-    double maxDistanceStepAllowedFactor = 5.0;
+    unsigned long numberComparedDistances = 10;
+    double maxDistanceStepAllowedFactor = 3.0;
     while (this->mapData.size() > this->numberClusters && count < (max_count))
     {
         unsigned long long index = 0;
@@ -50,8 +50,10 @@ void CureAlgorithm::clusterData()
         }
         if (meanDistancesVector.size() >= numberComparedDistances)
         {
-            double meanDistancesValue = std::accumulate(meanDistancesVector.begin(), meanDistancesVector.end(), 0.0) / static_cast<double>(meanDistancesVector.size());
-            if (minDistance > (maxDistanceStepAllowedFactor * meanDistancesValue))
+            rowvec m_meanDistancesVector(meanDistancesVector);
+            double meanDistancesValue = arma::mean(m_meanDistancesVector);
+            double stdDistances = arma::stddev(m_meanDistancesVector) * maxDistanceStepAllowedFactor;
+            if (minDistance < (meanDistancesValue - stdDistances) || minDistance > (meanDistancesValue + stdDistances))
             {
                 break;
             }
@@ -81,11 +83,12 @@ void CureAlgorithm::clusterData()
         }
         std::sort(indexPointSizes.begin(), indexPointSizes.end(),
                   [](const std::vector<unsigned long long>& a, const std::vector<unsigned long long>& b) {
-                    return a[2] > b[2];
+                    return a.at(1) > b.at(1);
                   });
         for (unsigned long i = this->numberClusters; i < indexPointSizes.size(); i++)
         {
-            deleteIndexPointerFromMapData(indexPointSizes.at(i).at(0));
+            // deleteIndexPointerFromMapData(indexPointSizes.at(i).at(0));
+            this->mapData.erase(indexPointSizes.at(i).at(0));
         }
     }
 }
