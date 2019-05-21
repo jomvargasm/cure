@@ -28,8 +28,8 @@ void CureAlgorithm::clusterData()
     long count = 0;
     long max_count = static_cast<long>(10 * this->mapData.size());
     vector<double> meanDistancesVector;
-    unsigned long numberComparedDistances = 10;
-    double maxDistanceStepAllowedFactor = 3.0;
+    unsigned long numberComparedDistances = 8;
+    double maxDistanceStepAllowedFactor = 2.0;
     while (this->mapData.size() > this->numberClusters && count < (max_count))
     {
         unsigned long long index = 0;
@@ -53,8 +53,12 @@ void CureAlgorithm::clusterData()
             rowvec m_meanDistancesVector(meanDistancesVector);
             double meanDistancesValue = arma::mean(m_meanDistancesVector);
             double stdDistances = arma::stddev(m_meanDistancesVector) * maxDistanceStepAllowedFactor;
-            if (minDistance < (meanDistancesValue - stdDistances) || minDistance > (meanDistancesValue + stdDistances))
+            double minDistancesValue = arma::min(m_meanDistancesVector);
+            double maxDistancesValue = arma::max(m_meanDistancesVector);
+            printf("Nueva distancia: %f STD: %f Mean: %f Max: %f Min: %f \n", minDistance, stdDistances, meanDistancesValue, maxDistancesValue, minDistancesValue);
+            if (minDistance > (meanDistancesValue + stdDistances))
             {
+                cout << "-----------Salimos ---------------- \n";
                 break;
             }
         }
@@ -96,8 +100,10 @@ void CureAlgorithm::deleteIndexPointerFromMapData(unsigned long long index)
 {
     if (this->mapData.count(index))
     {
+        /*
         delete this->mapData.at(index);
         this->mapData.at(index) = nullptr;
+        */
         this->mapData.erase(index);
     }
 }
