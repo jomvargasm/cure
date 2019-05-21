@@ -87,7 +87,6 @@ void CureAlgorithm::clusterData()
                   });
         for (unsigned long i = this->numberClusters; i < indexPointSizes.size(); i++)
         {
-            // deleteIndexPointerFromMapData(indexPointSizes.at(i).at(0));
             this->mapData.erase(indexPointSizes.at(i).at(0));
         }
     }
