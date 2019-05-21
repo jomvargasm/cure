@@ -27,9 +27,6 @@ void CureAlgorithm::clusterData()
 {
     long count = 0;
     long max_count = static_cast<long>(10 * this->mapData.size());
-    vector<double> meanDistancesVector;
-    unsigned long numberComparedDistances = 8;
-    double maxDistanceStepAllowedFactor = 2.0;
     while (this->mapData.size() > this->numberClusters && count < (max_count))
     {
         unsigned long long index = 0;
@@ -48,21 +45,6 @@ void CureAlgorithm::clusterData()
             this->mapData.at(index)->calculateClusterDistances(this->mapData);
             continue;
         }
-        if (meanDistancesVector.size() >= numberComparedDistances)
-        {
-            rowvec m_meanDistancesVector(meanDistancesVector);
-            double meanDistancesValue = arma::mean(m_meanDistancesVector);
-            double stdDistances = arma::stddev(m_meanDistancesVector) * maxDistanceStepAllowedFactor;
-            double minDistancesValue = arma::min(m_meanDistancesVector);
-            double maxDistancesValue = arma::max(m_meanDistancesVector);
-            printf("Nueva distancia: %f STD: %f Mean: %f Max: %f Min: %f \n", minDistance, stdDistances, meanDistancesValue, maxDistancesValue, minDistancesValue);
-            if (minDistance > (meanDistancesValue + stdDistances))
-            {
-                cout << "-----------Salimos ---------------- \n";
-                break;
-            }
-        }
-        meanDistancesVector.push_back(minDistance);
         CureClusterModel * newCluster = CureClusterModel::mergeClusters(this->mapData.at(index), this->mapData.at(indexNearest));
         for (ClusterDistance_t nearCluster : this->mapData.at(index)->nearestClusters)
         {
@@ -76,23 +58,6 @@ void CureAlgorithm::clusterData()
         deleteIndexPointerFromMapData(index);
         this->mapData.insert(std::pair<unsigned long long, CureClusterModel *>(newCluster->id, newCluster));
         count++;
-    }
-    if (this->mapData.size() > this->numberClusters)
-    {
-        vector<vector<unsigned long long>> indexPointSizes;
-        for (std::pair<unsigned long long, CureClusterModel *> clustPair : this->mapData)
-        {
-            vector<unsigned long long> m_size({clustPair.first, clustPair.second->points.size()});
-            indexPointSizes.push_back(m_size);
-        }
-        std::sort(indexPointSizes.begin(), indexPointSizes.end(),
-                  [](const std::vector<unsigned long long>& a, const std::vector<unsigned long long>& b) {
-                    return a.at(1) > b.at(1);
-                  });
-        for (unsigned long i = this->numberClusters; i < indexPointSizes.size(); i++)
-        {
-            this->mapData.erase(indexPointSizes.at(i).at(0));
-        }
     }
 }
 

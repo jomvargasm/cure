@@ -14,7 +14,7 @@ CureClusterModel::CureClusterModel(rowvec point) :
     // this->representativePoints.push_back(point);
 }
 
-double CureClusterModel::calculateDistance(const CureClusterModel & cluster)
+double CureClusterModel::calculateDistance(const CureClusterModel & cluster) const
 {
     double distance = numeric_limits<double>::max();
     double m_distance = 0;
@@ -101,40 +101,77 @@ unsigned long long CureClusterModel::getMinimumClusterID()
 
 CureClusterModel * CureClusterModel::mergeClusters (const CureClusterModel * clusterA, const CureClusterModel * clusterB)
 {
-    CureClusterModel * clusterMerged = new CureClusterModel(clusterA->points.at(0));
-    for (unsigned long long i = 1; i < clusterA->points.size(); i++)
+    bool bEliminateOutlier = false;
+    double maxDistanceStepAllowedFactor = 2.0;
+    const CureClusterModel * clusterBig = clusterA;
+    const CureClusterModel * clusterSmall = clusterB;
+    if (clusterA->points.size() > 1 || clusterB->points.size() > 1)
     {
-        clusterMerged->points.push_back(clusterA->points.at(i));
+        // revisar si se debe hacer mergue o simplemente eliminar outlier
+        double clustersDistance = clusterA->calculateDistance(*clusterB);
+        if (clusterA->points.size() > clusterB->points.size())
+        {
+            clusterBig = clusterA;
+            clusterSmall = clusterB;
+        }
+        else
+        {
+            clusterBig = clusterB;
+            clusterSmall = clusterA;
+        }
+        vector<double> distancesVector;
+        for (unsigned long i = 0; i < (clusterBig->points.size() - 1); i++)
+        {
+            distancesVector.push_back(arma::norm(clusterBig->points.at(i) - clusterBig->points.at(i + 1), CureClusterModel::distanceNormP));
+        }
+        rowvec m_meanDistancesVector(distancesVector);
+        double meanDistancesValue = arma::mean(m_meanDistancesVector);
+        double stdDistances = arma::stddev(m_meanDistancesVector) * maxDistanceStepAllowedFactor;
+        if (clustersDistance > (meanDistancesValue + stdDistances))
+        {
+            bEliminateOutlier = true;
+        }
     }
-    for (unsigned long long i = 0; i < clusterB->points.size(); i++)
+    CureClusterModel * clusterMerged = new CureClusterModel(clusterBig->points.at(0));
+    for (unsigned long long i = 1; i < clusterBig->points.size(); i++)
     {
-        clusterMerged->points.push_back(clusterB->points.at(i));
+        clusterMerged->points.push_back(clusterBig->points.at(i));
+    }
+    if (!bEliminateOutlier)
+    {
+        for (unsigned long long i = 0; i < clusterSmall->points.size(); i++)
+        {
+            clusterMerged->points.push_back(clusterSmall->points.at(i));
+        }
     }
     clusterMerged->calculateRepresentatives();
     map<unsigned long long, CureClusterModel *> clusterMap;
-    for (ClusterDistance_t clustDist : clusterA->nearestClusters)
+    for (ClusterDistance_t clustDist : clusterBig->nearestClusters)
     {
-        if (clusterB->id != clustDist.cluster->id)
+        if (clusterSmall->id != clustDist.cluster->id)
         {
             clusterMap.insert(std::pair<unsigned long long, CureClusterModel *>(clustDist.cluster->id, clustDist.cluster));
         }
     }
-    for (ClusterDistance_t clustDist : clusterB->nearestClusters)
+    if (!bEliminateOutlier)
     {
-        if (clusterA->id != clustDist.cluster->id)
+        for (ClusterDistance_t clustDist : clusterSmall->nearestClusters)
         {
-            bool bClusterFound = false;
-            for (std::pair<unsigned long long, CureClusterModel *> cluster : clusterMap)
+            if (clusterBig->id != clustDist.cluster->id)
             {
-                if (cluster.first == clustDist.cluster->id)
+                bool bClusterFound = false;
+                for (std::pair<unsigned long long, CureClusterModel *> cluster : clusterMap)
                 {
-                    bClusterFound = true;
-                    break;
+                    if (cluster.first == clustDist.cluster->id)
+                    {
+                        bClusterFound = true;
+                        break;
+                    }
                 }
-            }
-            if (!bClusterFound)
-            {
-                clusterMap.insert(std::pair<unsigned long long, CureClusterModel *>(clustDist.cluster->id, clustDist.cluster));
+                if (!bClusterFound)
+                {
+                    clusterMap.insert(std::pair<unsigned long long, CureClusterModel *>(clustDist.cluster->id, clustDist.cluster));
+                }
             }
         }
     }
@@ -155,7 +192,19 @@ void CureClusterModel::calculateRepresentatives()
     {
         centerPoint += this->points.at(i);
     }
-    this->representativePoints.push_back(centerPoint / static_cast<double>(this->points.size()));
+    centerPoint = centerPoint / static_cast<double>(this->points.size());
+    unsigned long nearestCenterPointIndex = 0;
+    double centerPointDistance = numeric_limits<double>::max();
+    for (unsigned long i = 0; i < this->points.size(); i++)
+    {
+        double newCenterPointDistance = arma::norm(centerPoint - this->points.at(i), CureClusterModel::distanceNormP);
+        if (i == 0 || newCenterPointDistance < centerPointDistance)
+        {
+            centerPointDistance = newCenterPointDistance;
+            nearestCenterPointIndex = i;
+        }
+    }
+    this->representativePoints.push_back(this->points.at(nearestCenterPointIndex));
     vector<rowvec> mPoints = this->points;
     while((this->representativePoints.size() < this->numberRepresentativePoints) && (mPoints.size() > 0))
     {

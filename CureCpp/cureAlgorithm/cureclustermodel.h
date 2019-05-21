@@ -21,7 +21,7 @@ class CureClusterModel
 {
 private:
     // PRIVATE FUNCTIONS
-    double calculateDistance(const CureClusterModel & cluster);
+    double calculateDistance(const CureClusterModel & cluster) const;
     // PRIVATE VARIABLES
     static unsigned long long numberStoredNearests;
     static unsigned long long id_counter;

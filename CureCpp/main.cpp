@@ -7,7 +7,7 @@ using namespace std;
 int main()
 {
     cout << "Hello World!" << endl;
-    CureManager cure("../CureCpp/data_set_cluster.csv", 15, 1, 0.4);
+    CureManager cure("../CureCpp/data_set_cluster.csv", 15, 1, 0.9);
     cure.saveResult("guardar.csv");
     return 0;
 }
