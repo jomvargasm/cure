@@ -54,7 +54,7 @@ void CureManager::saveResult(string fileName)
         {
             rowvec rowVector = this->clusterData.reader.data.row(i);
             double minDistance = numeric_limits<double>::max();
-            unsigned long index = 0, m = 0;
+            unsigned long index = 0, m = 0, clusterID = 0;
             for(std::pair<unsigned long long, CureClusterModel *> clusterPair : this->clustersMap)
             {
                 double m_distance = clusterPair.second->calculatePointDistance(rowVector);
@@ -62,6 +62,7 @@ void CureManager::saveResult(string fileName)
                 {
                     index = m;
                     minDistance = m_distance;
+                    clusterID = clusterPair.first;
                 }
                 m++;
             }
@@ -69,7 +70,14 @@ void CureManager::saveResult(string fileName)
             {
                 file << valueField << this->clusterData.reader.delimiter;
             }
-            file << index << "\n";
+            if (this->clustersMap.at(clusterID)->checkOutlier(rowVector))
+            {
+                file << index << "\n";
+            }
+            else
+            {
+                file << -1 << "\n";
+            }
         }
         file.close();
     }

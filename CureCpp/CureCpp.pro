@@ -37,12 +37,12 @@ SOURCES += \
 INCLUDEPATH += C:\Armadillo\armadillo-9.400.3\include
 
 LIBS += \
-    -LC:\Armadillo\armadillo-9.400.3\examples\lib_win64 \
-    -llapack_win64_MT  \
-    -lblas_win64_MT
-    # -larmadillo \
-    # -llapack \
-    # -lblas
+    # -LC:\Armadillo\armadillo-9.400.3\examples\lib_win64 \
+    # -llapack_win64_MT  \
+    # -lblas_win64_MT
+    -larmadillo \
+    -llapack \
+    -lblas
 
 HEADERS += \
     cure/cureclusterdata.h \

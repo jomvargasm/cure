@@ -1,10 +1,11 @@
 #include "cureclustermodel.h"
 
 unsigned long long CureClusterModel::id_counter = 1;
-unsigned long CureClusterModel::numberRepresentativePoints = 5;
-unsigned long long CureClusterModel::numberStoredNearests = 10;
+unsigned long CureClusterModel::numberRepresentativePoints = 15;
+unsigned long long CureClusterModel::numberStoredNearests = 30;
 arma::uword CureClusterModel::distanceNormP = 2;
 double CureClusterModel::shiftFactor = 0.1;
+double CureClusterModel::maxDistanceStepAllowedFactor = 3.0;
 
 CureClusterModel::CureClusterModel(rowvec point) :
     id(CureClusterModel::id_counter), points({point}), representativePoints({point})
@@ -33,7 +34,7 @@ double CureClusterModel::calculateDistance(const CureClusterModel & cluster) con
 }
 
 
-double CureClusterModel::calculatePointDistance(const rowvec & vectorA)
+double CureClusterModel::calculatePointDistance(rowvec & vectorA)
 {
     double distance = numeric_limits<double>::max();
     double m_distance = 0;
@@ -99,16 +100,52 @@ unsigned long long CureClusterModel::getMinimumClusterID()
     return static_cast<unsigned long long>(0);
 }
 
-CureClusterModel * CureClusterModel::mergeClusters (const CureClusterModel * clusterA, const CureClusterModel * clusterB)
+bool CureClusterModel::checkOutlier(rowvec point)
+{
+    if (this->points.size() < CureClusterModel::numberRepresentativePoints)
+    {
+        return true;
+    }
+    rowvec nearestRepresentative(this->representativePoints.at(0));
+    double nearestDistance = norm(nearestRepresentative - point, this->distanceNormP);
+    unsigned long nearestIndex = 0;
+    for (unsigned long i = 1; i < this->representativePoints.size(); i++)
+    {
+        double newNearestDistance = norm(this->representativePoints.at(i) - point, this->distanceNormP);
+        if (newNearestDistance < nearestDistance)
+        {
+            nearestDistance = newNearestDistance;
+            nearestIndex = i;
+        }
+    }
+    nearestRepresentative = this->representativePoints.at(nearestIndex);
+    rowvec centerPoint(this->points.at(0));
+    for (unsigned long i = 1; i < this->points.size(); i++)
+    {
+        centerPoint += this->points.at(i);
+    }
+    centerPoint = centerPoint / static_cast<double>(this->points.size());
+    double representativeCenterDistance = norm(centerPoint - nearestRepresentative, this->distanceNormP);
+    double pointCenterDistance = norm(centerPoint - point, this->distanceNormP);
+    if (pointCenterDistance < representativeCenterDistance)
+    {
+        return true;
+    }
+    if (pointCenterDistance > representativeCenterDistance + (1 + 0.2))
+    {
+        return false;
+    }
+    return true;
+}
+
+CureClusterModel * CureClusterModel::mergeClusters (CureClusterModel * clusterA, CureClusterModel * clusterB)
 {
     bool bEliminateOutlier = false;
-    double maxDistanceStepAllowedFactor = 2.0;
-    const CureClusterModel * clusterBig = clusterA;
-    const CureClusterModel * clusterSmall = clusterB;
-    if (clusterA->points.size() > 1 || clusterB->points.size() > 1)
+    CureClusterModel * clusterBig = clusterA;
+    CureClusterModel * clusterSmall = clusterB;
+    if (clusterA->points.size() >= CureClusterModel::numberRepresentativePoints || clusterB->points.size() >= CureClusterModel::numberRepresentativePoints)
     {
         // revisar si se debe hacer mergue o simplemente eliminar outlier
-        double clustersDistance = clusterA->calculateDistance(*clusterB);
         if (clusterA->points.size() > clusterB->points.size())
         {
             clusterBig = clusterA;
@@ -119,18 +156,20 @@ CureClusterModel * CureClusterModel::mergeClusters (const CureClusterModel * clu
             clusterBig = clusterB;
             clusterSmall = clusterA;
         }
-        vector<double> distancesVector;
-        for (unsigned long i = 0; i < (clusterBig->points.size() - 1); i++)
+        rowvec nearestRepresentative(clusterSmall->representativePoints.at(0));
+        double nearestDistance = clusterBig->calculatePointDistance(nearestRepresentative);
+        unsigned long nearestIndex = 0;
+        for (unsigned long i = 1; i < clusterSmall->representativePoints.size(); i++)
         {
-            distancesVector.push_back(arma::norm(clusterBig->points.at(i) - clusterBig->points.at(i + 1), CureClusterModel::distanceNormP));
+            double newNearestDistance = clusterBig->calculatePointDistance(clusterSmall->representativePoints.at(i));
+            if (newNearestDistance < nearestDistance)
+            {
+                nearestDistance = newNearestDistance;
+                nearestIndex = i;
+            }
         }
-        rowvec m_meanDistancesVector(distancesVector);
-        double meanDistancesValue = arma::mean(m_meanDistancesVector);
-        double stdDistances = arma::stddev(m_meanDistancesVector) * maxDistanceStepAllowedFactor;
-        if (clustersDistance > (meanDistancesValue + stdDistances))
-        {
-            bEliminateOutlier = true;
-        }
+        nearestRepresentative = clusterSmall->representativePoints.at(nearestIndex);
+        bEliminateOutlier = clusterBig->checkOutlier(nearestRepresentative);
     }
     CureClusterModel * clusterMerged = new CureClusterModel(clusterBig->points.at(0));
     for (unsigned long long i = 1; i < clusterBig->points.size(); i++)
@@ -194,11 +233,11 @@ void CureClusterModel::calculateRepresentatives()
     }
     centerPoint = centerPoint / static_cast<double>(this->points.size());
     unsigned long nearestCenterPointIndex = 0;
-    double centerPointDistance = numeric_limits<double>::max();
+    double centerPointDistance = -1;
     for (unsigned long i = 0; i < this->points.size(); i++)
     {
         double newCenterPointDistance = arma::norm(centerPoint - this->points.at(i), CureClusterModel::distanceNormP);
-        if (i == 0 || newCenterPointDistance < centerPointDistance)
+        if (i == 0 || newCenterPointDistance > centerPointDistance)
         {
             centerPointDistance = newCenterPointDistance;
             nearestCenterPointIndex = i;
@@ -212,7 +251,7 @@ void CureClusterModel::calculateRepresentatives()
         double distance = -1.0;
         for (unsigned long i = 0; i < mPoints.size(); i++)
         {
-            double distanceAcc = 0.0;
+            double distanceAcc = norm(mPoints.at(i) - centerPoint, this->distanceNormP);
             for (rowvec repPoint : this->representativePoints)
             {
                 distanceAcc += norm(repPoint - mPoints.at(i), this->distanceNormP);

@@ -26,18 +26,19 @@ private:
     static unsigned long long numberStoredNearests;
     static unsigned long long id_counter;
     static unsigned long numberRepresentativePoints;
+    static double maxDistanceStepAllowedFactor;
 
 public:
     // PUBLIC FUNCTIONS
     CureClusterModel(rowvec point);
     static void setNumberRepresentativePoints(unsigned long newValue);
-    static CureClusterModel * mergeClusters (const CureClusterModel * clusterA, const CureClusterModel * clusterB);
+    static CureClusterModel * mergeClusters (CureClusterModel * clusterA, CureClusterModel * clusterB);
     void calculateRepresentatives();
     void calculateClusterDistances(map<unsigned long long, CureClusterModel *> & clusters);
     void reCalculateClusterDistances(unsigned long long lastClusterID, CureClusterModel * cluster);
     double getMinimumDistance();
     unsigned long long getMinimumClusterID();
-    double calculatePointDistance(const rowvec & vectorA);
+    double calculatePointDistance(rowvec & vectorA);
     // PUBLIC VARIABLES
     static double shiftFactor;
     static arma::uword distanceNormP;
@@ -45,6 +46,7 @@ public:
     vector<rowvec> points;
     vector<rowvec> representativePoints;
     vector<ClusterDistance_t> nearestClusters;
+    bool checkOutlier(rowvec point);
 };
 
 struct ClusterDistance_t
